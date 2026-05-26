@@ -1,45 +1,18 @@
-import React, { useContext } from 'react'
-import { AppContext } from '../App'
+import React from 'react'
 
-const ClientTickets = () => {
-  const { currentClient, tickets } = useContext(AppContext)
-  const myTickets = tickets.filter(t => t.clientId === currentClient.id)
-
-  if (myTickets.length === 0) {
-    return (
-      <div className="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
-        No tickets raised yet. Go to "Raise Ticket" to ask a question.
-      </div>
-    )
-  }
-
+const ClientTickets = ({ myTickets }) => {
+  if (myTickets.length === 0) return <div className="bg-white rounded-xl shadow-md p-6 text-center">No tickets raised yet.</div>
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
       <h2 className="text-2xl font-bold mb-4">My Support Tickets</h2>
-      <div className="space-y-4">
-        {myTickets.map(ticket => (
-          <div key={ticket.id} className="border rounded-lg p-4 bg-gray-50">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-bold text-lg">{ticket.subject}</h3>
-                <p className="text-sm text-gray-600">Raised on: {new Date(ticket.createdAt).toLocaleString()}</p>
-                <p className="mt-2">{ticket.description}</p>
-                {ticket.adminResponse && (
-                  <div className="mt-3 bg-blue-50 p-3 rounded">
-                    <span className="font-semibold">📩 Admin Response:</span> {ticket.adminResponse}
-                  </div>
-                )}
-              </div>
-              <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                ticket.status === 'Open' ? 'bg-yellow-100 text-yellow-700' : 
-                ticket.status === 'Resolved' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-              }`}>
-                {ticket.status}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
+      {myTickets.map(t => (
+        <div key={t.id} className="border rounded-lg p-4 mb-3 bg-gray-50">
+          <div className="flex justify-between"><h3 className="font-bold">{t.subject}</h3><span className={`px-2 py-1 rounded text-xs ${t.status === 'Open' ? 'bg-yellow-100' : t.status === 'Resolved' ? 'bg-green-100' : 'bg-blue-100'}`}>{t.status}</span></div>
+          <p className="text-sm text-gray-500">{new Date(t.createdAt).toLocaleString()}</p>
+          <p className="mt-2">{t.description}</p>
+          {t.adminResponse && <div className="mt-2 bg-blue-50 p-2 rounded"><span className="font-semibold">Admin:</span> {t.adminResponse}</div>}
+        </div>
+      ))}
     </div>
   )
 }
