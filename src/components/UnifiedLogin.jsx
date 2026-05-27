@@ -1,77 +1,4 @@
-// import React, { useState, useContext } from 'react'
-// import { useNavigate } from 'react-router-dom'
-// import { AppContext } from '../App'
-
-// const UnifiedLogin = () => {
-//   const [username, setUsername] = useState('')
-//   const [password, setPassword] = useState('')
-//   const [error, setError] = useState('')
-//   const [loading, setLoading] = useState(false)
-//   const { login } = useContext(AppContext)
-//   const navigate = useNavigate()
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault()
-//     setLoading(true)
-//     setError('')
-//     const result = await login(username, password)
-//     setLoading(false)
-//     if (result.error) {
-//       setError(result.error)
-//     } else if (result.role === 'admin') {
-//       navigate('/admin/dashboard')
-//     } else if (result.role === 'client') {
-//       navigate('/client/dashboard')
-//     }
-//   }
-
-//   return (
-//     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
-//       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-//         <div className="text-center mb-6">
-//           <h1 className="text-3xl font-bold text-primary-800">Janaseva e-Seva</h1>
-//           <p className="text-gray-600">Digital Services Portal</p>
-//           <div className="h-1 w-20 bg-primary-600 mx-auto mt-3 rounded"></div>
-//         </div>
-//         <form onSubmit={handleSubmit} className="space-y-5">
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700">Username / Admin ID</label>
-//             <input 
-//               type="text" 
-//               value={username}
-//               onChange={(e) => setUsername(e.target.value)}
-//               className="w-full px-4 py-2 border rounded-lg"
-//               placeholder="Enter your username"
-//               required
-//             />
-//           </div>
-//           <div>
-//             <label className="block text-sm font-medium text-gray-700">Password</label>
-//             <input 
-//               type="password"
-//               value={password}
-//               onChange={(e) => setPassword(e.target.value)}
-//               className="w-full px-4 py-2 border rounded-lg"
-//               required
-//             />
-//           </div>
-//           {error && <div className="text-red-600 text-sm bg-red-50 p-2 rounded">{error}</div>}
-//           <button type="submit" disabled={loading} className="w-full bg-emerald-600 text-white py-2 rounded-lg">
-//             {loading ? 'Authenticating...' : 'Sign In'}
-//           </button>
-//         </form>
-//         <div className="mt-6 text-center text-xs text-gray-400">
-//           Demo Admin: admin@janaseva.gov / Admin@123<br/>
-//           Demo Clients: (will be added via admin panel)
-//         </div>
-//       </div>
-//     </div>
-//   )
-// }
-
-// export default UnifiedLogin
-
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../App';
 
@@ -80,17 +7,49 @@ const UnifiedLogin = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaValue, setCaptchaValue] = useState('');
+  const [captchaError, setCaptchaError] = useState('');
+  
   const { login } = useContext(AppContext);
   const navigate = useNavigate();
 
+  // Generate random CAPTCHA on component mount and when refresh is clicked
+  const generateCaptcha = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCaptchaValue(result);
+    setCaptchaInput('');
+    setCaptchaError('');
+  };
+
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setCaptchaError('');
+    
+    // Validate CAPTCHA
+    if (captchaInput !== captchaValue) {
+      setCaptchaError('Invalid CAPTCHA. Please try again.');
+      generateCaptcha();
+      return;
+    }
+    
+    setLoading(true);
     const result = await login(username, password);
     setLoading(false);
+    
     if (result.error) {
       setError(result.error);
+      generateCaptcha(); // Refresh CAPTCHA on error
     } else if (result.role === 'admin') {
       navigate('/admin/dashboard');
     } else if (result.role === 'client') {
@@ -103,7 +62,6 @@ const UnifiedLogin = () => {
       {/* Premium Background with Gradient & Overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#0a1a1a] via-[#1a2a1f] to-[#2a2418]">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1533090161767-e6ffed986c88?q=80&w=2069&auto=format&fit=crop')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
-        {/* Animated grain texture */}
         <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 25% 40%, rgba(255,215,140,0.08) 0%, transparent 50%)' }}></div>
       </div>
 
@@ -198,6 +156,7 @@ const UnifiedLogin = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Username Field */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     Username / Admin ID
@@ -219,6 +178,7 @@ const UnifiedLogin = () => {
                   </div>
                 </div>
 
+                {/* Password Field with Eye Icon */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     Password
@@ -230,14 +190,67 @@ const UnifiedLogin = () => {
                       </svg>
                     </div>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none bg-white/80"
+                      className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none bg-white/80"
                       placeholder="••••••••"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      {showPassword ? (
+                        <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
                   </div>
+                </div>
+
+                {/* CAPTCHA Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Security Verification
+                  </label>
+                  <div className="flex gap-3 items-center">
+                    <div className="flex-1">
+                      <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl p-3 text-center">
+                        <span className="text-2xl font-bold tracking-wider text-gray-700 select-none">
+                          {captchaValue}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={generateCaptcha}
+                      className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition"
+                      title="Refresh CAPTCHA"
+                    >
+                      <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={captchaInput}
+                    onChange={(e) => setCaptchaInput(e.target.value)}
+                    className="w-full mt-3 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none bg-white/80"
+                    placeholder="Enter the code shown above"
+                    required
+                  />
+                  {captchaError && (
+                    <p className="text-red-500 text-xs mt-1">{captchaError}</p>
+                  )}
                 </div>
 
                 {error && (
@@ -273,7 +286,7 @@ const UnifiedLogin = () => {
                 </button>
               </form>
 
-              {/* Demo credentials - Premium styled */}
+              {/* Demo credentials */}
               <div className="mt-8 p-4 bg-gradient-to-r from-gray-50 to-emerald-50/30 rounded-xl border border-gray-100">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
