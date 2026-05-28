@@ -976,7 +976,8 @@ const AdminDashboard = () => {
             </>
           )}
 
-          {activePage === 'clients' && <ClientsListWithPasswordView />}
+          {/* {activePage === 'clients' && <ClientsListWithPasswordView />} */}
+          {activePage === 'clients' && <ClientsList />}
           {activePage === 'onboard' && <OnboardClient />}
           {activePage === 'tickets' && <AdminTickets />}
         </div>
