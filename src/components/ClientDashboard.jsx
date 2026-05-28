@@ -5,8 +5,7 @@ import {
   FiLogOut, FiMessageSquare, FiList, FiHome, FiUser, 
   FiCheckCircle, FiClock, FiBell, FiGrid, FiShield, 
   FiMenu, FiX, FiChevronRight, FiExternalLink, FiSearch,
-  FiTrendingUp, FiAward, FiStar, FiBriefcase, FiMapPin,
-  FiMail, FiPhone, FiCalendar, FiDollarSign, FiGlobe
+  FiTrendingUp, FiAward, FiStar, FiBriefcase
 } from 'react-icons/fi'
 import RaiseTicket from './RaiseTicket'
 import ClientTickets from './ClientTickets'
@@ -17,24 +16,39 @@ const ClientDashboard = () => {
   const [activeSection, setActiveSection] = useState('services')
   const [showSevaGrid, setShowSevaGrid] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  // Load sidebar state from localStorage, default to false (closed) on mobile, true on desktop
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('client_sidebar_open')
+    if (saved !== null) {
+      return saved === 'true'
+    }
+    // Default: closed on mobile, open on desktop
+    return window.innerWidth >= 1024
+  })
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
   const [searchService, setSearchService] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
 
   useEffect(() => {
     if (refreshData) refreshData()
-    
+  }, [refreshData])
+
+  // Save sidebar state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('client_sidebar_open', sidebarOpen)
+  }, [sidebarOpen])
+
+  // Handle window resize - only update isMobile state, not sidebarOpen
+  useEffect(() => {
     const checkScreenSize = () => {
       const mobile = window.innerWidth < 1024
       setIsMobile(mobile)
-      if (mobile) {
-        setSidebarOpen(false)
-      }
     }
     checkScreenSize()
-  }, [refreshData])
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -54,6 +68,11 @@ const ClientDashboard = () => {
     } else {
       alert(`${serviceName} service will be available soon.`)
     }
+  }
+
+  // Toggle sidebar function
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen)
   }
 
   if (!currentClient) return (
@@ -101,36 +120,91 @@ const ClientDashboard = () => {
 
   const categories = [
     { id: 'all', name: 'All Services', icon: '🎯' },
-    { id: 'travel', name: 'Travel & Transport', icon: '✈️' },
     { id: 'government', name: 'Government', icon: '🏛️' },
     { id: 'finance', name: 'Finance & Tax', icon: '💰' },
     { id: 'education', name: 'Education', icon: '📚' },
     { id: 'utility', name: 'Utilities', icon: '⚡' },
-    { id: 'welfare', name: 'Welfare', icon: '🤝' }
+    { id: 'welfare', name: 'Welfare', icon: '🤝' },
+    { id: 'travel', name: 'Travel', icon: '✈️' },
+    { id: 'health', name: 'Health', icon: '🏥' }
   ]
 
+  // Complete Services List
   const completeServicesList = [
+    { name: "eSevanam Govt. of Kerala", dept: "Kerala Govt", icon: "🏛️", url: "https://esevanam.kerala.gov.in", category: "government", isPopular: true },
+    { name: "Encumbrance Certificate", dept: "Registration Dept", icon: "📜", url: "https://pearl.registration.kerala.gov.in", category: "government", isPopular: true },
+    { name: "ILGMS - Panchayat Services", dept: "Panchayat Dept", icon: "🏘️", url: "https://ilgms.lsgkerala.gov.in", category: "government", isPopular: true },
+    { name: "KEAM PORTAL", dept: "Engineering Admission", icon: "⚙️", url: "https://cee.kerala.gov.in/keam2025", category: "education", isPopular: true },
+    { name: "e-District", dept: "Land Revenue", icon: "🗺️", url: "https://edistrict.kerala.gov.in", category: "government", isPopular: true },
+    { name: "Location Certificate", dept: "Village Office", icon: "📍", url: "#", category: "government", isPopular: false },
+    { name: "Income Certificate", dept: "Village Office", icon: "📋", url: "#", category: "government", isPopular: true },
+    { name: "Scholarship (NSP)", dept: "Education", icon: "🎓", url: "https://scholarships.gov.in", category: "education", isPopular: true },
+    { name: "GST Enrollment", dept: "Tax", icon: "📊", url: "https://gst.gov.in", category: "finance", isPopular: true },
+    { name: "LPG HP Gas Connection", dept: "Utilities", icon: "🔥", url: "#", category: "utility", isPopular: false },
+    { name: "Income Tax Filing", dept: "IT Dept", icon: "📑", url: "https://incometax.gov.in", category: "finance", isPopular: true },
+    { name: "Birth & Death Certificate", dept: "Registration", icon: "👶", url: "https://crsorgi.gov.in", category: "government", isPopular: true },
+    { name: "Parivahan Seva", dept: "Transport", icon: "🚗", url: "https://parivahan.gov.in", category: "government", isPopular: true },
+    { name: "LIC Insurance Premium", dept: "Insurance", icon: "🛡️", url: "https://licindia.in", category: "finance", isPopular: true },
+    { name: "e-Shram Registration", dept: "Labour", icon: "👷", url: "https://eshram.gov.in", category: "welfare", isPopular: false },
+    { name: "Sanchaya", dept: "Govt Services", icon: "📁", url: "#", category: "government", isPopular: false },
+    { name: "Election ID Card", dept: "Election", icon: "🗳️", url: "https://voters.eci.gov.in", category: "government", isPopular: true },
+    { name: "services.india.gov.in", dept: "National Portal", icon: "🇮🇳", url: "https://services.india.gov.in", category: "government", isPopular: true },
+    { name: "Chief Minister's Office", dept: "Grievance", icon: "🏢", url: "https://cm.kerala.gov.in", category: "government", isPopular: false },
+    { name: "National Employment Services", dept: "Employment", icon: "💼", url: "https://nes.gov.in", category: "government", isPopular: false },
+    { name: "IDMS", dept: "Document Management", icon: "📄", url: "#", category: "government", isPopular: false },
+    { name: "Kerala PCB Online", dept: "Pollution Control", icon: "🌳", url: "https://keralapcb.nic.in", category: "health", isPopular: false },
+    { name: "Kerala PSC", dept: "Recruitment", icon: "📝", url: "https://keralapsc.gov.in", category: "education", isPopular: true },
+    { name: "Ksmart", dept: "Smart City", icon: "🏙️", url: "https://ksmart.kerala.gov.in", category: "government", isPopular: false },
+    { name: "Welfare Pension", dept: "Social Welfare", icon: "👵", url: "#", category: "welfare", isPopular: true },
+    { name: "Sevana Pension", dept: "Pension", icon: "💰", url: "#", category: "welfare", isPopular: false },
+    { name: "NEET", dept: "Medical Admission", icon: "📖", url: "https://neet.nta.nic.in", category: "education", isPopular: true },
+    { name: "IBPS", dept: "Banking Recruitment", icon: "🏦", url: "https://ibps.in", category: "education", isPopular: true },
+    { name: "SSC", dept: "Staff Selection", icon: "📋", url: "https://ssc.nic.in", category: "education", isPopular: true },
+    { name: "Revenue Department", dept: "Revenue", icon: "🏛️", url: "#", category: "government", isPopular: false },
+    { name: "LSGD Kerala", dept: "Local Self Govt", icon: "🏘️", url: "https://lsgkerala.gov.in", category: "government", isPopular: false },
+    { name: "Udyam Registration", dept: "MSME", icon: "🏭", url: "https://udyamregistration.gov.in", category: "government", isPopular: true },
+    { name: "Kerala Police", dept: "Police", icon: "👮", url: "https://keralapolice.gov.in", category: "government", isPopular: false },
+    { name: "Food Safety Compliance", dept: "Health", icon: "🍽️", url: "https://foscos.fssai.gov.in", category: "health", isPopular: false },
+    { name: "Civil Supplies Kerala", dept: "Civil Supplies", icon: "🛒", url: "#", category: "government", isPopular: false },
+    { name: "EPFO", dept: "Provident Fund", icon: "💰", url: "https://epfindia.gov.in", category: "finance", isPopular: true },
+    { name: "Citizen LSG Kerala", dept: "Local Self Govt", icon: "🏘️", url: "https://citizen.lsgkerala.gov.in", category: "government", isPopular: false },
+    { name: "Pravasi Welfare", dept: "Welfare", icon: "✈️", url: "#", category: "welfare", isPopular: false },
+    { name: "KMTWWFB", dept: "Motor Transport Welfare", icon: "🚛", url: "#", category: "welfare", isPopular: false },
+    { name: "KSEB", dept: "Electricity Board", icon: "⚡", url: "https://kseb.in", category: "utility", isPopular: true },
+    { name: "KSEB Quick Pay", dept: "Electricity", icon: "⚡", url: "https://quickpay.kseb.in", category: "utility", isPopular: true },
+    { name: "e-grantz", dept: "Scholarship", icon: "📖", url: "https://egrantz.kerala.gov.in", category: "education", isPopular: false },
+    { name: "e Treasury", dept: "Finance", icon: "💰", url: "https://etreasury.kerala.gov.in", category: "finance", isPopular: false },
+    { name: "KNMC", dept: "Nurses Council", icon: "🩺", url: "#", category: "health", isPopular: false },
+    { name: "PM Kisan Samman Nidhi", dept: "Agriculture", icon: "🌾", url: "https://pmkisan.gov.in", category: "welfare", isPopular: true },
+    { name: "SSLC REVALUATION", dept: "Education", icon: "📚", url: "https://keralapareekshabhavan.in", category: "education", isPopular: true },
+    { name: "DCE SCHOLARSHIP", dept: "Education", icon: "🎓", url: "#", category: "education", isPopular: false },
+    { name: "eChallan", dept: "Traffic", icon: "🚔", url: "https://echallan.parivahan.gov.in", category: "government", isPopular: true },
+    { name: "PANCARD SERVICE PORTAL", dept: "Income Tax", icon: "🆔", url: "https://www.incometax.gov.in", category: "finance", isPopular: true },
+    { name: "Sports Admission", dept: "Sports", icon: "⚽", url: "#", category: "education", isPopular: false },
+    { name: "MGU ADMISSION", dept: "University", icon: "🎓", url: "https://mgu.ac.in", category: "education", isPopular: false },
+    { name: "CALICUT UNIVERSITY ADMISSION", dept: "University", icon: "🎓", url: "https://uoc.ac.in", category: "education", isPopular: false },
+    { name: "LBS Centre", dept: "Science & Technology", icon: "🔬", url: "https://lbscentre.in", category: "education", isPopular: false },
+    { name: "Christian Nursing Colleges", dept: "Medical", icon: "🏥", url: "#", category: "health", isPopular: false },
+    { name: "IG Co-operative Hospital", dept: "Health", icon: "🏥", url: "https://www.igconkochi.com", category: "health", isPopular: false },
+    { name: "IRCTC", dept: "Railways", icon: "🚆", url: "https://www.irctc.co.in/nget/train-search", category: "travel", isPopular: true },
     { name: "Bus Booking", dept: "Transport", icon: "🚌", url: "https://www.redbus.in", category: "travel", isPopular: true },
     { name: "Flight Booking", dept: "Aviation", icon: "✈️", url: "https://www.makemytrip.com", category: "travel", isPopular: true },
     { name: "Hotel Booking", dept: "Hospitality", icon: "🏨", url: "https://www.oyorooms.com", category: "travel", isPopular: true },
-    { name: "IRCTC", dept: "Railways", icon: "🚆", url: "https://irctc.co.in", category: "travel", isPopular: true },
-    { name: "Udyam Registration", dept: "MSME", icon: "🏭", url: "https://udyamregistration.gov.in", category: "government", isPopular: true },
-    { name: "EPFO", dept: "Provident Fund", icon: "💰", url: "https://epfindia.gov.in", category: "finance", isPopular: true },
-    { name: "KSEB", dept: "Electricity", icon: "⚡", url: "https://kseb.in", category: "utility", isPopular: true },
-    { name: "PM Kisan", dept: "Agriculture", icon: "🌾", url: "https://pmkisan.gov.in", category: "welfare", isPopular: true },
-    { name: "GST", dept: "Tax", icon: "📊", url: "https://gst.gov.in", category: "finance", isPopular: true },
-    { name: "Income Tax", dept: "IT Department", icon: "📑", url: "https://incometax.gov.in", category: "finance", isPopular: true },
     { name: "PAN Card", dept: "Income Tax", icon: "🆔", url: "https://www.incometax.gov.in", category: "finance", isPopular: true },
     { name: "Aadhaar", dept: "UIDAI", icon: "👤", url: "https://uidai.gov.in", category: "government", isPopular: true },
     { name: "Passport", dept: "External Affairs", icon: "📘", url: "https://passportindia.gov.in", category: "government", isPopular: true },
     { name: "Driving License", dept: "Transport", icon: "🚗", url: "https://parivahan.gov.in", category: "government", isPopular: true },
-    { name: "Voter ID", dept: "Election", icon: "🗳️", url: "https://voters.eci.gov.in", category: "government", isPopular: true },
-    { name: "Birth Certificate", dept: "Registration", icon: "👶", url: "https://crsorgi.gov.in", category: "government", isPopular: true },
-    { name: "NEET", dept: "Education", icon: "📖", url: "https://neet.nta.nic.in", category: "education", isPopular: true },
-    { name: "JEE", dept: "Education", icon: "⚙️", url: "https://jeemain.nta.nic.in", category: "education", isPopular: true },
-    { name: "Scholarship", dept: "Education", icon: "🎓", url: "https://scholarships.gov.in", category: "education", isPopular: true },
-    { name: "Pension", dept: "Welfare", icon: "👵", url: "https://npss.nsdl.com", category: "welfare", isPopular: true }
+    { name: "Voter ID", dept: "Election", icon: "🗳️", url: "https://voters.eci.gov.in", category: "government", isPopular: true }
   ]
+
+  // Update category counts
+  categories.forEach(cat => {
+    if (cat.id === 'all') {
+      cat.count = completeServicesList.length
+    } else {
+      cat.count = completeServicesList.filter(s => s.category === cat.id).length
+    }
+  })
 
   const filteredServices = completeServicesList.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchService.toLowerCase()) ||
@@ -143,15 +217,15 @@ const ClientDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Overlay for mobile */}
       {isMobile && sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)}></div>
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={toggleSidebar}></div>
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed */}
       <div className={`fixed top-0 left-0 z-50 h-full transition-all duration-300 ${
         sidebarOpen ? 'w-80' : 'w-20'
       }`}>
         <div className="h-full bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-white flex flex-col shadow-2xl overflow-y-auto">
-          <div className="p-6 border-b border-gray-700/50">
+          <div className="p-6 border-b border-gray-700/50 flex justify-between items-center">
             {sidebarOpen ? (
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg">
@@ -167,6 +241,13 @@ const ClientDashboard = () => {
                 <span className="text-white font-bold text-xl">JS</span>
               </div>
             )}
+            {/* Toggle button - ONLY way to open/close sidebar */}
+            <button 
+              onClick={toggleSidebar}
+              className="p-1.5 hover:bg-white/10 rounded-lg transition"
+            >
+              {sidebarOpen ? <FiX className="w-4 h-4 text-gray-400" /> : <FiMenu className="w-4 h-4 text-gray-400" />}
+            </button>
           </div>
 
           {sidebarOpen && (
@@ -189,7 +270,7 @@ const ClientDashboard = () => {
 
           <nav className="flex-1 p-4 space-y-2">
             <button
-              onClick={() => { setActiveSection('services'); setShowSevaGrid(false); if(isMobile) setSidebarOpen(false); }}
+              onClick={() => { setActiveSection('services'); setShowSevaGrid(false); if(isMobile) toggleSidebar(); }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${
                 activeSection === 'services'
                   ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
@@ -202,7 +283,7 @@ const ClientDashboard = () => {
             </button>
 
             <button
-              onClick={() => { setActiveSection('raiseTicket'); setShowSevaGrid(false); if(isMobile) setSidebarOpen(false); }}
+              onClick={() => { setActiveSection('raiseTicket'); setShowSevaGrid(false); if(isMobile) toggleSidebar(); }}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${
                 activeSection === 'raiseTicket'
                   ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
@@ -215,8 +296,8 @@ const ClientDashboard = () => {
             </button>
 
             <button
-              onClick={() => { setActiveSection('myTickets'); setShowSevaGrid(false); if(isMobile) setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${
+              onClick={() => { setActiveSection('myTickets'); setShowSevaGrid(false); if(isMobile) toggleSidebar(); }}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 ${
                 activeSection === 'myTickets'
                   ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
                   : 'text-gray-400 hover:bg-white/10 hover:text-white'
@@ -244,21 +325,24 @@ const ClientDashboard = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Margin changes based on sidebar state */}
       <div className={`transition-all duration-300 min-h-screen ${
         sidebarOpen ? 'ml-80' : 'ml-20'
       }`}>
-        {/* Clean Compact Header */}
+        {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           <div className="px-6 py-3 flex justify-between items-center">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition"
+            {/* Mobile menu button */}
+            <button 
+              onClick={toggleSidebar}
+              className="p-2 rounded-lg hover:bg-gray-100 transition lg:hidden"
             >
               <FiMenu className="w-5 h-5 text-gray-600" />
             </button>
 
-            {/* Business Name - Clean and Simple */}
+            {/* Desktop spacer to center business name */}
+            <div className="hidden lg:block w-8"></div>
+
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-lg flex items-center justify-center">
                 <FiBriefcase className="text-white text-sm" />
@@ -268,12 +352,8 @@ const ClientDashboard = () => {
               </span>
             </div>
 
-            {/* Profile */}
             <div className="relative">
-              <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-3 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
-              >
+              <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="flex items-center gap-3 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-gray-800">{currentClient.fullName?.split(' ')[0]}</p>
                   <p className="text-xs text-gray-500">Client</p>
@@ -290,10 +370,7 @@ const ClientDashboard = () => {
                     <p className="text-xs text-gray-500">{currentClient.mobile}</p>
                     <p className="text-xs font-semibold text-blue-600 mt-1">{currentClient.businessName}</p>
                   </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition"
-                  >
+                  <button onClick={handleLogout} className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition">
                     <FiLogOut className="w-4 h-4" />
                     Logout
                   </button>
@@ -306,161 +383,131 @@ const ClientDashboard = () => {
         <div className="p-6">
           {activeSection === 'services' && (
             <>
-              {/* Stats Cards - Moved here from header */}
+              {/* Stats Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-500 text-sm">Total Tickets</p>
-                      <p className="text-2xl font-bold text-gray-800">{myTickets.length}</p>
-                    </div>
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <FiMessageSquare className="text-blue-600" />
-                    </div>
-                  </div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border">
+                  <p className="text-gray-500 text-sm">Total Tickets</p>
+                  <p className="text-2xl font-bold text-gray-800">{myTickets.length}</p>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-500 text-sm">Active Tickets</p>
-                      <p className="text-2xl font-bold text-amber-600">{activeTickets}</p>
-                    </div>
-                    <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                      <FiClock className="text-amber-600" />
-                    </div>
-                  </div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border">
+                  <p className="text-gray-500 text-sm">Active Tickets</p>
+                  <p className="text-2xl font-bold text-amber-600">{activeTickets}</p>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-500 text-sm">Resolved</p>
-                      <p className="text-2xl font-bold text-emerald-600">{myTickets.filter(t => t.status === 'Resolved').length}</p>
-                    </div>
-                    <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                      <FiCheckCircle className="text-emerald-600" />
-                    </div>
-                  </div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border">
+                  <p className="text-gray-500 text-sm">Resolved</p>
+                  <p className="text-2xl font-bold text-emerald-600">{myTickets.filter(t => t.status === 'Resolved').length}</p>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-500 text-sm">Services</p>
-                      <p className="text-2xl font-bold text-blue-600">{completeServicesList.length}+</p>
-                    </div>
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <FiGrid className="text-purple-600" />
-                    </div>
-                  </div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border">
+                  <p className="text-gray-500 text-sm">Services</p>
+                  <p className="text-2xl font-bold text-blue-600">{completeServicesList.length}+</p>
                 </div>
               </div>
 
-              {/* Image Banner */}
+              {/* Banner */}
               <div className="mb-8 overflow-hidden rounded-2xl shadow-lg relative">
                 <div className="relative h-48 sm:h-56 md:h-64">
                   {bannerSlides.map((slide, index) => (
-                    <div
-                      key={index}
-                      className={`absolute inset-0 transition-opacity duration-700 ${
-                        currentSlide === index ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    >
+                    <div key={index} className={`absolute inset-0 transition-opacity duration-700 ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}>
                       <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
                       <div className="absolute inset-0 flex flex-col justify-center px-8 sm:px-12">
                         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">{slide.title}</h2>
                         <p className="text-white/90 text-sm max-w-lg mb-3">{slide.description}</p>
-                        <button
-                          onClick={() => handleServiceClick(slide.title, slide.link)}
-                          className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 w-fit transition"
-                        >
+                        <button onClick={() => handleServiceClick(slide.title, slide.link)} className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 w-fit transition">
                           {slide.cta} <FiExternalLink className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
                   ))}
-                  
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
                     {bannerSlides.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentSlide(index)}
-                        className={`h-1.5 rounded-full transition-all ${currentSlide === index ? 'w-6 bg-white' : 'w-1.5 bg-white/50'}`}
-                      />
+                      <button key={index} onClick={() => setCurrentSlide(index)} className={`h-1.5 rounded-full transition-all ${currentSlide === index ? 'w-6 bg-white' : 'w-1.5 bg-white/50'}`} />
                     ))}
                   </div>
-                  
-                  <button onClick={() => setCurrentSlide((prev) => (prev - 1 + bannerSlides.length) % bannerSlides.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1.5 rounded-full transition text-sm">
-                    ❮
-                  </button>
-                  <button onClick={() => setCurrentSlide((prev) => (prev + 1) % bannerSlides.length)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1.5 rounded-full transition text-sm">
-                    ❯
-                  </button>
+                  <button onClick={() => setCurrentSlide((prev) => (prev - 1 + bannerSlides.length) % bannerSlides.length)} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1.5 rounded-full transition text-sm">❮</button>
+                  <button onClick={() => setCurrentSlide((prev) => (prev + 1) % bannerSlides.length)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1.5 rounded-full transition text-sm">❯</button>
                 </div>
               </div>
 
               {/* Services Section */}
               <div>
-                <div className="flex justify-between items-center mb-5">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800">All e-Seva Services</h2>
-                    <p className="text-gray-500 text-sm">Access 20+ government services at your fingertips</p>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-1 text-xs text-gray-400">
-                    <FiAward className="text-amber-500" />
-                    <span>Trusted by 10L+ users</span>
-                  </div>
+                <div className="mb-5">
+                  <h2 className="text-xl font-bold text-gray-800">All e-Seva Services</h2>
+                  <p className="text-gray-500 text-sm">Access {completeServicesList.length}+ government services at your fingertips</p>
                 </div>
 
-                {/* Search and Filter Bar */}
-                <div className="flex flex-col sm:flex-row gap-3 mb-5">
-                  <div className="relative flex-1">
-                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
-                    <input
-                      type="text"
-                      placeholder="Search services..."
-                      value={searchService}
-                      onChange={(e) => setSearchService(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                {/* Search Bar */}
+                <div className="mb-5">
+                  <div className="relative w-full">
+                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
+                    <input 
+                      type="text" 
+                      placeholder="Search services by name or department..." 
+                      value={searchService} 
+                      onChange={(e) => setSearchService(e.target.value)} 
+                      className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-base shadow-sm" 
                     />
-                  </div>
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                    {categories.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setSelectedCategory(cat.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition ${
-                          selectedCategory === cat.id
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
+                    {searchService && (
+                      <button 
+                        onClick={() => setSearchService('')} 
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
-                        <span className="mr-1">{cat.icon}</span>
-                        {cat.name}
+                        ✕
                       </button>
-                    ))}
+                    )}
                   </div>
+                  {searchService && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Found {filteredServices.length} result{filteredServices.length !== 1 ? 's' : ''} for "{searchService}"
+                    </p>
+                  )}
+                </div>
+
+                {/* Category Filters */}
+                <div className="flex gap-2 overflow-x-auto pb-3 mb-5">
+                  {categories.map(cat => (
+                    <button 
+                      key={cat.id} 
+                      onClick={() => setSelectedCategory(cat.id)} 
+                      className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                        selectedCategory === cat.id 
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-blue-200'
+                      }`}
+                    >
+                      <span className="mr-1">{cat.icon}</span>
+                      {cat.name}
+                      <span className={`ml-1 text-xs ${selectedCategory === cat.id ? 'text-blue-200' : 'text-gray-400'}`}>
+                        ({cat.count})
+                      </span>
+                    </button>
+                  ))}
                 </div>
 
                 {/* Services Grid */}
                 {filteredServices.length === 0 ? (
-                  <div className="text-center py-10 bg-white rounded-xl border border-gray-100">
-                    <FiSearch className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">No services found matching your search.</p>
+                  <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <FiSearch className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 font-medium">No services found</p>
+                    <p className="text-sm text-gray-400 mt-1">Try adjusting your search or filter criteria</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {filteredServices.map((service, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => handleServiceClick(service.name, service.url)}
-                        className="group bg-white rounded-xl p-3 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-gray-100 hover:border-blue-200 relative overflow-hidden"
+                      <div 
+                        key={idx} 
+                        onClick={() => handleServiceClick(service.name, service.url)} 
+                        className="group bg-white rounded-xl p-4 text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border border-gray-100 hover:border-blue-200 relative overflow-hidden"
                       >
-                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">{service.icon}</div>
-                        <h3 className="font-semibold text-gray-800 text-xs mb-0.5">{service.name}</h3>
-                        <p className="text-xs text-gray-400">{service.dept}</p>
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/20 group-hover:to-indigo-50/20 transition-all duration-300"></div>
+                        <div className="text-4xl mb-2 group-hover:scale-110 transition-transform duration-300">{service.icon}</div>
+                        <h3 className="font-semibold text-gray-800 text-sm mb-1 line-clamp-2">{service.name}</h3>
+                        <p className="text-xs text-gray-400 line-clamp-1">{service.dept}</p>
                         {service.isPopular && (
-                          <div className="absolute top-1 right-1">
-                            <FiStar className="text-amber-400 text-xs fill-amber-400" />
+                          <div className="absolute top-2 right-2">
+                            <FiStar className="text-amber-400 text-sm fill-amber-400" />
                           </div>
                         )}
                       </div>
@@ -469,20 +516,20 @@ const ClientDashboard = () => {
                 )}
 
                 {/* Support Banner */}
-                <div className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 text-white">
+                <div className="mt-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-5 text-white">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                        <FiTrendingUp className="text-xl" />
+                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                        <FiTrendingUp className="text-2xl" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-base">Premium Support Available</h3>
-                        <p className="text-white/80 text-xs">Need assistance? Our team is here 24/7</p>
+                        <h3 className="font-semibold text-lg">Premium Support Available</h3>
+                        <p className="text-white/80 text-sm">Need assistance? Our team is here 24/7</p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setActiveSection('raiseTicket')}
-                      className="bg-white text-blue-600 px-4 py-1.5 rounded-lg text-sm font-semibold hover:shadow-lg transition"
+                    <button 
+                      onClick={() => setActiveSection('raiseTicket')} 
+                      className="bg-white text-blue-600 px-5 py-2 rounded-xl text-sm font-semibold hover:shadow-lg transition transform hover:scale-105"
                     >
                       Raise a Ticket
                     </button>

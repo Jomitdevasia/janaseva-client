@@ -1,11 +1,10 @@
-
 import React, { useState, useContext } from 'react'
 import { AppContext } from '../../App'
 import { 
   FiUserPlus, FiCheckCircle, FiAlertCircle, FiArrowRight, 
   FiArrowLeft, FiUser, FiBriefcase, FiMapPin, FiHome,
   FiSmartphone, FiLock, FiUserCheck, FiShield, FiMail,
-  FiSave, FiRefreshCw
+  FiSave, FiRefreshCw, FiEye, FiEyeOff
 } from 'react-icons/fi'
 
 const OnboardClient = () => {
@@ -13,6 +12,8 @@ const OnboardClient = () => {
   const [currentStep, setCurrentStep] = useState(1)
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const [form, setForm] = useState({
     fullName: '',
@@ -29,12 +30,34 @@ const OnboardClient = () => {
 
   const [errors, setErrors] = useState({})
 
+  // Handle input change with validation
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-    // Clear error for this field when user types
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' })
+    const { name, value } = e.target
+    
+    // Special handling for mobile number - only digits
+    if (name === 'mobile') {
+      const onlyDigits = value.replace(/\D/g, '')
+      const limitedDigits = onlyDigits.slice(0, 10)
+      setForm({ ...form, [name]: limitedDigits })
+    } else {
+      setForm({ ...form, [name]: value })
     }
+    
+    // Clear error for this field when user types
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: '' })
+    }
+  }
+
+  // Validate email format
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  // Validate mobile number (exactly 10 digits)
+  const isValidMobile = (mobile) => {
+    return /^\d{10}$/.test(mobile)
   }
 
   const validateStep1 = () => {
@@ -43,23 +66,52 @@ const OnboardClient = () => {
     if (!form.businessName.trim()) newErrors.businessName = 'Business name is required'
     if (!form.locality.trim()) newErrors.locality = 'Locality is required'
     if (!form.address.trim()) newErrors.address = 'Complete address is required'
+    if (!form.mobile.trim()) {
+      newErrors.mobile = 'Mobile number is required'
+    } else if (!isValidMobile(form.mobile)) {
+      newErrors.mobile = 'Enter a valid 10-digit mobile number'
+    }
     return newErrors
   }
 
   const validateStep2 = () => {
     const newErrors = {}
-    if (!form.mobile.trim()) newErrors.mobile = 'Mobile number is required'
-    else if (!/^\d{10}$/.test(form.mobile)) newErrors.mobile = 'Enter a valid 10-digit mobile number'
     
-    if (!form.username.trim()) newErrors.username = 'Username is required'
-    else if (form.username.length < 4) newErrors.username = 'Username must be at least 4 characters'
+    // Mobile validation
+    if (!form.mobile.trim()) {
+      newErrors.mobile = 'Mobile number is required'
+    } else if (!isValidMobile(form.mobile)) {
+      newErrors.mobile = 'Enter a valid 10-digit mobile number'
+    }
     
-    if (!form.password) newErrors.password = 'Password is required'
-    else if (form.password.length < 6) newErrors.password = 'Password must be at least 6 characters'
+    // Email validation (optional but must be valid if provided)
+    if (form.email.trim() && !isValidEmail(form.email)) {
+      newErrors.email = 'Enter a valid email address (e.g., name@example.com)'
+    }
     
+    // Username validation
+    if (!form.username.trim()) {
+      newErrors.username = 'Username is required'
+    } else if (form.username.length < 4) {
+      newErrors.username = 'Username must be at least 4 characters'
+    } else if (form.username.length > 20) {
+      newErrors.username = 'Username must be less than 20 characters'
+    }
+    
+    // Password validation
+    if (!form.password) {
+      newErrors.password = 'Password is required'
+    } else if (form.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters'
+    } else if (form.password.length > 30) {
+      newErrors.password = 'Password must be less than 30 characters'
+    }
+    
+    // Confirm password validation
     if (form.password !== form.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match'
     }
+    
     return newErrors
   }
 
@@ -79,6 +131,18 @@ const OnboardClient = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Final validation before submit
+    const step1Errors = validateStep1()
+    const step2Errors = validateStep2()
+    const allErrors = { ...step1Errors, ...step2Errors }
+    
+    if (Object.keys(allErrors).length > 0) {
+      setErrors(allErrors)
+      setCurrentStep(1)
+      return
+    }
+    
     setIsSubmitting(true)
     
     const { confirmPassword, ...clientData } = form
@@ -244,10 +308,27 @@ const OnboardClient = () => {
                       placeholder="10-digit mobile number"
                       value={form.mobile}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition bg-gray-50/50"
-                      disabled={currentStep === 1}
+                      onKeyDown={(e) => {
+                        // Prevent non-digit characters
+                        if (!/[0-9]/.test(e.key) && 
+                            e.key !== 'Backspace' && 
+                            e.key !== 'Delete' && 
+                            e.key !== 'Tab' && 
+                            e.key !== 'ArrowLeft' && 
+                            e.key !== 'ArrowRight' && 
+                            e.key !== 'Home' && 
+                            e.key !== 'End') {
+                          e.preventDefault();
+                        }
+                      }}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition ${
+                        errors.mobile ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50/50'
+                      }`}
+                      maxLength={10}
+                      inputMode="numeric"
                     />
-                    <p className="text-xs text-gray-400 mt-1">Will be verified in next step</p>
+                    {errors.mobile && <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>}
+                    <p className="text-xs text-gray-400 mt-1">Enter 10-digit mobile number (digits only)</p>
                   </div>
 
                   <div className="md:col-span-2">
@@ -292,10 +373,22 @@ const OnboardClient = () => {
                       name="mobile"
                       value={form.mobile}
                       onChange={handleChange}
+                      onKeyDown={(e) => {
+                        if (!/[0-9]/.test(e.key) && 
+                            e.key !== 'Backspace' && 
+                            e.key !== 'Delete' && 
+                            e.key !== 'Tab' && 
+                            e.key !== 'ArrowLeft' && 
+                            e.key !== 'ArrowRight') {
+                          e.preventDefault();
+                        }
+                      }}
                       className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition ${
                         errors.mobile ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50/50'
                       }`}
                       placeholder="Enter 10-digit mobile"
+                      maxLength={10}
+                      inputMode="numeric"
                     />
                     {errors.mobile && <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>}
                   </div>
@@ -311,8 +404,12 @@ const OnboardClient = () => {
                       placeholder="client@example.com"
                       value={form.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition bg-gray-50/50"
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition ${
+                        errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50/50'
+                      }`}
                     />
+                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                    <p className="text-xs text-gray-400 mt-1">Optional but must be valid format (e.g., name@example.com)</p>
                   </div>
 
                   <div>
@@ -331,6 +428,7 @@ const OnboardClient = () => {
                       }`}
                     />
                     {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
+                    <p className="text-xs text-gray-400 mt-1">4-20 characters, letters and numbers only</p>
                   </div>
 
                   <div>
@@ -338,17 +436,27 @@ const OnboardClient = () => {
                       <FiLock className="inline mr-2 text-emerald-500" />
                       Password *
                     </label>
-                    <input
-                      type="password"
-                      name="password"
-                      placeholder="Create a strong password"
-                      value={form.password}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition ${
-                        errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50/50'
-                      }`}
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        placeholder="Create a strong password"
+                        value={form.password}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition ${
+                          errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50/50'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                      </button>
+                    </div>
                     {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+                    <p className="text-xs text-gray-400 mt-1">Minimum 6 characters, maximum 30 characters</p>
                   </div>
 
                   <div>
@@ -356,16 +464,25 @@ const OnboardClient = () => {
                       <FiLock className="inline mr-2 text-emerald-500" />
                       Confirm Password *
                     </label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      placeholder="Confirm your password"
-                      value={form.confirmPassword}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition ${
-                        errors.confirmPassword ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50/50'
-                      }`}
-                    />
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        placeholder="Confirm your password"
+                        value={form.confirmPassword}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-3 pr-12 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition ${
+                          errors.confirmPassword ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50/50'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showConfirmPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+                      </button>
+                    </div>
                     {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
                   </div>
 
