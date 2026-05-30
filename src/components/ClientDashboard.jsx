@@ -913,11 +913,9 @@ const ClientDashboard = () => {
       </div>
 
       {/* Main Content - Margin changes based on sidebar state */}
-<div className={`transition-all duration-300 min-h-screen w-full ${
-  sidebarOpen ? 'md:ml-80' : 'md:ml-20'
-}`} style={{
-  marginLeft: sidebarOpen ? (window.innerWidth >= 768 ? '20rem' : '0') : (window.innerWidth >= 768 ? '5rem' : '0')
-}}>
+      <div className={`transition-all duration-300 min-h-screen ${
+        sidebarOpen ? 'ml-80' : 'ml-20'
+      }`}>
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           <div className="px-6 py-3 flex justify-between items-center">
